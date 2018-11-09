@@ -1,0 +1,15 @@
+<html>
+   <body>
+      <form action = "http://localhost:5000/classification" method = "POST"
+         enctype = "multipart/form-data">
+         <input type = "file" name = "file" />
+          <select name="classifier">
+             <option value="M">MultinomialNB</option>
+             <option value="C">ComplementNB</option>
+             <option value="B">BernoulliNB</option>
+         </select>
+         <input type = "submit"/>
+      </form>
+
+   </body>
+</html>
