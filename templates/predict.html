@@ -1,0 +1,20 @@
+<html>
+   <body>
+      <form action = "http://localhost:5000/prediction" method = "POST"
+         enctype = "multipart/form-data">
+         <label for="input_file">Input Data</label>
+            <input type = "file" id ="input_file" name = "input_file" />
+         <br>
+         <label for="model_file">Input Model</label>
+            <input type = "file" id ="model_file" name = "model_file" />
+         <br>
+          <br>
+          <br>
+         <input type="radio" name="output" value="Classification_Report">Classification Report Display<br>
+         <br>
+         <br>
+         <input type = "submit"/>
+      </form>
+
+   </body>
+</html>

@@ -2,12 +2,21 @@
    <body>
       <form action = "http://localhost:5000/classification" method = "POST"
          enctype = "multipart/form-data">
-         <input type = "file" name = "file" />
+         <input type = "file" name = "input_file" />
+         <br>
+          <br>
+          <br>
           <select name="classifier">
              <option value="M">MultinomialNB</option>
              <option value="C">ComplementNB</option>
              <option value="B">BernoulliNB</option>
          </select>
+         <br>
+         <br>
+         <input type="radio" name="output" value="File_Download">Classifier File Download<br>
+         <input type="radio" name="output" value="Classification_Report">Classification Report Display<br>
+         <br>
+         <br>
          <input type = "submit"/>
       </form>
 

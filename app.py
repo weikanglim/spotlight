@@ -1,4 +1,4 @@
-from flask import Flask, render_template,request,jsonify
+from flask import Flask, render_template,request,json,send_file
 from werkzeug.utils import secure_filename
 import pandas as pd
 import re
@@ -15,40 +15,78 @@ from sklearn.naive_bayes import ComplementNB
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score,f1_score, precision_score,recall_score,precision_recall_fscore_support
 from sklearn.externals import joblib
 
 app = Flask(__name__)
 
-@app.route('/')
-def upload_page():
-    return render_template('upload.html')
+@app.route('/train')
+def train_page():
+    return render_template('train.html')
+
+@app.route('/predict')
+def predict_page():
+    return render_template('predict.html')
 
 @app.route('/classification', methods = ['POST'])
 def text_classifier():
    if request.method == 'POST':
       if request.files :
-          f = request.files['file']
-          print(f.filename)
-          data=read_files(f)
+          input_data = request.files['input_file']
+          print(input_data.filename)
+          data=read_files(input_data)
           X = data_pre_process(data)
           y = data.iloc[:, 0]
           X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.3, random_state=42)
-
           classifier = pick_classifier(request.form.get('classifier'))
-          print(classifier)
           clf=train_model(X_train, y_train,classifier)
           save_model(clf, str(request.form.get('classifier'))+"_classifier")
           clf=load_model(str(request.form.get('classifier'))+"_classifier")
           y_pred=predict(X_test,clf)
-          # f.save(secure_filename(f.filename))
-
           print('accuracy %s' % accuracy_score(y_pred, y_test))
           print(classification_report(y_test, y_pred))
-          return 'accuracy %s' % accuracy_score(y_pred, y_test)
-      
+          if str(request.form.get('output')) == 'File_Download':
+             return send_file(str(request.form.get('classifier'))+"_classifier",attachment_filename="trained_model",as_attachment='true')
+          elif str(request.form.get('output')) == 'Classification_Report':
+             accuracy= accuracy_score(y_pred, y_test)
+             data = {'accuracy': accuracy, 'classification report': classification_report_data(classification_report(y_test, y_pred))}
+             response = app.response_class(
+                  response=json.dumps(data),
+                  mimetype='application/json'
+             )
+             return response
+          else:
+              return "output type is not specified"
       else:
           return "no file uploaded"
+
+
+@app.route('/prediction', methods=['POST'])
+def text_prediction():
+   if request.method == 'POST':
+      if request.files:
+          input_data=request.files['input_file']
+          input_model=request.files['model_file']
+          print(input_data.filename)
+          data=read_files(input_data)
+          X = data_pre_process(data)
+          y = data.iloc[:, 0]
+          X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.3, random_state=42)
+          clf=load_model(input_model)
+          y_pred=predict(X_test,clf)
+          if str(request.form.get('output')) == 'Classification_Report':
+             accuracy= accuracy_score(y_pred, y_test)
+             data = {'accuracy': accuracy, 'classification report': classification_report_data(classification_report(y_test, y_pred))}
+             response = app.response_class(
+                  response=json.dumps(data),
+                  mimetype='application/json'
+             )
+             return response
+          else:
+              return "output type is not specified"
+      else:
+          return "no file uploaded"
+
 
 def read_files(file_obj):
         file_type = file_obj.filename[file_obj.filename.rfind('.'):]
@@ -89,6 +127,30 @@ def data_pre_process(dataset):
                  text_processed.append(spell(stemmer.stem(word)))
             data.append(" ".join(text_processed))
         return data
+def classification_report_data(report):
+    report_data = []
+    lines = report.split('\n')
+    for line in lines[2:]:
+        print(line)
+        if not line:
+           continue
+        else:
+            row = {}
+            row_data = line.split('      ')
+            if(row_data[0]==''):
+                row['class'] = row_data[1]
+                row['precision'] = float(row_data[2])
+                row['recall'] = float(row_data[3])
+                row['f1_score'] = float(row_data[4])
+                row['support'] = float(row_data[5])
+            else:
+                row['class'] = row_data[0]
+                row['precision'] = float(row_data[1])
+                row['recall'] = float(row_data[2])
+                row['f1_score'] = float(row_data[3])
+                row['support'] = float(row_data[4])
+        report_data.append(row)
+    return report_data
 
 def train_model(X_train, y_train, classifier):
     nb = Pipeline([('vect', TfidfVectorizer()),
