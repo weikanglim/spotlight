@@ -30,62 +30,103 @@ def predict_page():
 
 @app.route('/classification', methods = ['POST'])
 def text_classifier():
-   if request.method == 'POST':
-      if request.files :
-          input_data = request.files['input_file']
-          print(input_data.filename)
-          data=read_files(input_data)
-          X = data_pre_process(data)
-          y = data.iloc[:, 0]
-          X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.3, random_state=42)
-          classifier = pick_classifier(request.form.get('classifier'))
-          clf=train_model(X_train, y_train,classifier)
-          save_model(clf, str(request.form.get('classifier'))+"_classifier")
-          clf=load_model(str(request.form.get('classifier'))+"_classifier")
-          y_pred=predict(X_test,clf)
-          print('accuracy %s' % accuracy_score(y_pred, y_test))
-          print(classification_report(y_test, y_pred))
-          if str(request.form.get('output')) == 'File_Download':
-             return send_file(str(request.form.get('classifier'))+"_classifier",attachment_filename="trained_model",as_attachment='true')
-          elif str(request.form.get('output')) == 'Classification_Report':
-             accuracy= accuracy_score(y_pred, y_test)
-             data = {'accuracy': accuracy, 'classification report': classification_report_data(classification_report(y_test, y_pred))}
-             response = app.response_class(
-                  response=json.dumps(data),
-                  mimetype='application/json'
-             )
-             return response
-          else:
-              return "output type is not specified"
-      else:
-          return "no file uploaded"
+       if request.method == 'POST':
+        # Use Case 1 :from scratch with input file : output : trained model/classification Report
+          if request.files :
+              input_data = request.files['input_file']
+              print(input_data.filename)
+              dataframe=read_files(input_data)
+              data_list=[]
+              for i in range(dataframe.shape[0]):
+                  data_list.append(dataframe.iloc[i, 1])
+
+              X = data_pre_process(data_list)
+              y = dataframe.iloc[:, 0]
+              X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+              classifier = pick_classifier(request.form.get('classifier'))
+              clf = train_model(X_train, y_train, classifier)
+              save_model(clf, str(request.form.get('classifier')) + "_classifier")
+              clf = load_model(str(request.form.get('classifier')) + "_classifier")
+              y_pred = predict(X_test, clf)
+              print('accuracy %s' % accuracy_score(y_pred, y_test))
+              print(classification_report(y_test, y_pred))
+              if str(request.form.get('output')) == 'File_Download':
+                  return send_file(str(request.form.get('classifier')) + "_classifier",
+                                   attachment_filename="trained_model", as_attachment='true')
+              elif str(request.form.get('output')) == 'Classification_Report':
+                  accuracy = accuracy_score(y_pred, y_test)
+                  data = {'accuracy': accuracy,
+                          'classification report': classification_report_data(classification_report(y_test, y_pred))}
+                  response = app.response_class(
+                      response=json.dumps(data),
+                      mimetype='application/json'
+                  )
+                  return response
+              else:
+                  return "output type is not specified"
+          #elif request.form.get('input_data'):
+              #input_data = request.form.get('input_data')
+              #data = parse_input_data(input_data)
+          else :
+              return "Input data is not provided"
 
 
 @app.route('/prediction', methods=['POST'])
 def text_prediction():
    if request.method == 'POST':
-      if request.files:
-          input_data=request.files['input_file']
-          input_model=request.files['model_file']
-          print(input_data.filename)
-          data=read_files(input_data)
-          X = data_pre_process(data)
-          y = data.iloc[:, 0]
-          X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.3, random_state=42)
-          clf=load_model(input_model)
-          y_pred=predict(X_test,clf)
-          if str(request.form.get('output')) == 'Classification_Report':
-             accuracy= accuracy_score(y_pred, y_test)
-             data = {'accuracy': accuracy, 'classification report': classification_report_data(classification_report(y_test, y_pred))}
-             response = app.response_class(
-                  response=json.dumps(data),
-                  mimetype='application/json'
-             )
-             return response
+          # Use Case 2 :Trained model and input file : output : classification Report
+          if request.files and not request.form.get('input_data'):
+              print("in predict 1")
+              input_data=request.files['input_file']
+              input_model=request.files['model_file']
+              print(input_data.filename)
+              dataframe=read_files(input_data)
+              data_list = []
+              for i in range(dataframe.shape[0]):
+                  data_list.append(dataframe.iloc[i, 1])
+              clf = load_model(input_model)
+              X = data_pre_process(data_list)
+              y = dataframe.iloc[:, 0]
+              print("in predict 1 y"+str(len(y)))
+              y_pred = predict(X, clf)
+              print("in predict 1 y_pred"+str(len(y_pred)))
+              if str(request.form.get('output')) == 'Classification_Report':
+                  accuracy= accuracy_score(y_pred, y)
+                  data = {'accuracy': accuracy, 'classification report': classification_report_data(classification_report(y, y_pred))}
+                  response = app.response_class(
+                        response=json.dumps(data),
+                        mimetype='application/json'
+                   )
+                  return response
+              else:
+                  return "output type is not specified"
+          # Use Case 3 :Trained model and input text data  : output : Category prediction
+          elif request.files and request.form.get('input_data'):
+              input_data = request.form.get('input_data')
+              input_model = request.files['model_file']
+              dataframe = parse_input_data(input_data)
+              data_list = []
+              for i in range(dataframe.shape[0]):
+                  data_list.append(dataframe.iloc[i, 0])
+              clf = load_model(input_model)
+              X = data_pre_process(data_list)
+              print(X)
+              y_pred = predict(X, clf)
+              list_out=[]
+              for data,pred in zip(data_list,y_pred.tolist()):
+                  list_out.append(data+' : '+pred)
+              if str(request.form.get('output')) == 'Predict_Category':
+                  response = app.response_class(
+                        response=json.dumps(list_out),
+                        mimetype='application/json'
+                   )
+                  return response
+              else:
+                  return "output type is not specified"
           else:
-              return "output type is not specified"
-      else:
-          return "no file uploaded"
+              return "no file uploaded"
+
+
 
 
 def read_files(file_obj):
@@ -98,6 +139,12 @@ def read_files(file_obj):
             dataset = pd.read_csv(file_obj, encoding="ISO-8859-1")
             # print(dataset.shape[0])
         return dataset
+
+
+def parse_input_data(input_data):
+    list_of_lines = str(input_data).strip().splitlines()
+    dataset = pd.DataFrame(list_of_lines)
+    return dataset
 
 def pick_classifier(classifier_name):
     classifier=None
@@ -112,8 +159,7 @@ def pick_classifier(classifier_name):
 def data_pre_process(dataset):
         data = []
         stemmer = PorterStemmer()
-        for i in range(dataset.shape[0]):
-            text_data = dataset.iloc[i, 1]
+        for text_data in dataset:
             # remove non alphabatic characters
             text_data = re.sub('[^A-Za-z]', ' ', text_data)
             # make words lowercase

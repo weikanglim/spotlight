@@ -2,8 +2,12 @@
    <body>
       <form action = "http://localhost:5000/prediction" method = "POST"
          enctype = "multipart/form-data">
-         <label for="input_file">Input Data</label>
+         <label for="input_file">Input Data File</label>
             <input type = "file" id ="input_file" name = "input_file" />
+         <label for="input_file">Input Data</label>
+         <textarea rows="4" cols="50" name = "input_data">
+            type here
+         </textarea>
          <br>
          <label for="model_file">Input Model</label>
             <input type = "file" id ="model_file" name = "model_file" />
@@ -11,6 +15,7 @@
           <br>
           <br>
          <input type="radio" name="output" value="Classification_Report">Classification Report Display<br>
+         <input type="radio" name="output" value="Predict_Category">Predict Category<br>
          <br>
          <br>
          <input type = "submit"/>
