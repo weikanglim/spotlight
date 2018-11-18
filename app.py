@@ -1,24 +1,30 @@
-from flask import Flask, render_template,request,json,send_file
-from werkzeug.utils import secure_filename
-import pandas as pd
 import re
+
+from flask import Flask, json, render_template, request, send_file
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
+
 import nltk
-from nltk.stem import PorterStemmer
-nltk.download('stopwords')
-from nltk.corpus import stopwords
-nltk.download('punkt')
-from nltk.tokenize import word_tokenize as wt
+import pandas as pd
 from autocorrect import spell
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.naive_bayes import ComplementNB
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score,f1_score, precision_score,recall_score,precision_recall_fscore_support
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize as wt
 from sklearn.externals import joblib
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix, f1_score,
+                             precision_recall_fscore_support, precision_score,
+                             recall_score)
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import BernoulliNB, ComplementNB, MultinomialNB
+from sklearn.pipeline import Pipeline
+
+nltk.download('stopwords')
+nltk.download('punkt')
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/train')
 def train_page():
