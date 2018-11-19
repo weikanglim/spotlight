@@ -1,12 +1,16 @@
 import re
+from os import listdir
+from os.path import isfile, join
+from timeit import default_timer as timer
 
-from flask import Flask, json, render_template, request, send_file
-from flask_cors import CORS
+from flask import (Flask, json, render_template, request, send_file,
+                   send_from_directory)
 from werkzeug.utils import secure_filename
 
 import nltk
 import pandas as pd
 from autocorrect import spell
+from flask_cors import CORS
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize as wt
@@ -23,7 +27,10 @@ from sklearn.pipeline import Pipeline
 nltk.download('stopwords')
 nltk.download('punkt')
 
+STORE_LOCATION = 'store'
+
 app = Flask(__name__)
+app.config['STORE_LOCATION'] = STORE_LOCATION
 CORS(app)
 
 @app.route('/train')
@@ -33,6 +40,112 @@ def train_page():
 @app.route('/predict')
 def predict_page():
     return render_template('predict.html')
+
+@app.route('/models')
+def get_models():
+    model_store = app.config['STORE_LOCATION']
+    models = [f for f in listdir(model_store) if (isfile(join(model_store, f)) and f != "empty.md")]
+    print(models)
+    results = []
+    for model in models:
+        result = {}
+        result['name'] = model
+        result['url'] = "http://" + request.host + "/models/" + model
+        results.append(result)
+
+    response = app.response_class(
+        response=json.dumps(results),
+        mimetype='application/json'
+    )
+    return response
+
+
+@app.route('/models/train', methods = ['POST'])
+def train_model():
+    if not request.files:
+        return 403
+
+    input_data = request.files['datafile']
+    print(input_data.filename)
+    dataframe=read_files(input_data)
+    start = timer()
+    print("Pre-processing")
+    # data_list=[]
+    # for i in range(dataframe.shape[0]):
+    #     data_list.append(dataframe.iloc[i, 1])
+    #X = data_pre_process(dataframe.iloc[:, 1])
+    X = dataframe.iloc[:, 1]
+    y = dataframe.iloc[:, 0]
+    end = timer()
+    print(end-start)
+
+    print("Splitting")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    print("Training")
+    start = timer()
+    classifier = pick_classifier(request.form.get('classifier'))
+    model_name = request.form.get('modelname')
+    clf = train_model(X_train, y_train, classifier)
+    end = timer()
+    print(end-start)
+
+    print("Saving")
+    save_model(clf, model_name)
+
+    print("Evaluating prediction")
+    start = timer()
+    y_pred = predict(X_test, clf)
+    print('accuracy %s' % accuracy_score(y_pred, y_test))
+    print(classification_report(y_test, y_pred))
+    end = timer()
+    print(end-start)
+
+    accuracy = accuracy_score(y_pred, y_test)
+    data = {'accuracy': accuracy,
+            'classificationMatrix': classification_report_data(classification_report(y_test, y_pred)),
+            'modelUri': "http://" + request.host + "/models/" + model_name }
+    response = app.response_class(
+        response=json.dumps(data),
+        mimetype='application/json')
+
+    return response
+
+@app.route('/models/<model_name>/predict', methods =['POST'])
+def get_model_prediction(model_name):
+    model_file_path = join(app.config['STORE_LOCATION'], model_name)
+    if not isfile(model_file_path):
+        return 404
+    
+    model = load_model(model_file_path)
+    input_data = request.form.get('text')
+    dataframe = parse_input_data(input_data)
+    data_list = []
+    for i in range(dataframe.shape[0]):
+        data_list.append(dataframe.iloc[i, 0])
+    X = data_pre_process(data_list)
+    print(X)
+    y_pred = predict(X, model)
+    list_out=[]
+    for data, pred in zip(data_list, y_pred.tolist()):
+        result = {}
+        result['text'] = data
+        result['prediction'] = pred
+        list_out.append(result)
+
+    response = app.response_class(
+        response=json.dumps(list_out),
+        mimetype='application/json')
+    return response
+
+@app.route('/models/<model_name>')
+def get_stored_model(model_name):
+    model_file_path = join(app.config['STORE_LOCATION'], model_name)
+    if not isfile(model_file_path):
+        return 404
+
+    return send_from_directory(app.config['STORE_LOCATION'], model_name)
+
 
 @app.route('/classification', methods = ['POST'])
 def text_classifier():
@@ -51,13 +164,13 @@ def text_classifier():
               X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
               classifier = pick_classifier(request.form.get('classifier'))
               clf = train_model(X_train, y_train, classifier)
-              save_model(clf, str(request.form.get('classifier')) + "_classifier")
+              stored_file = save_model(clf, str(request.form.get('classifier')) + "_classifier")
               clf = load_model(str(request.form.get('classifier')) + "_classifier")
               y_pred = predict(X_test, clf)
               print('accuracy %s' % accuracy_score(y_pred, y_test))
               print(classification_report(y_test, y_pred))
               if str(request.form.get('output')) == 'File_Download':
-                  return send_file(str(request.form.get('classifier')) + "_classifier",
+                  return send_file(stored_file,
                                    attachment_filename="trained_model", as_attachment='true')
               elif str(request.form.get('output')) == 'Classification_Report':
                   accuracy = accuracy_score(y_pred, y_test)
@@ -190,13 +303,13 @@ def classification_report_data(report):
             row = {}
             row_data = line.split('      ')
             if(row_data[0]==''):
-                row['class'] = row_data[1]
+                row['class'] = row_data[1].strip()
                 row['precision'] = float(row_data[2])
                 row['recall'] = float(row_data[3])
                 row['f1_score'] = float(row_data[4])
                 row['support'] = float(row_data[5])
             else:
-                row['class'] = row_data[0]
+                row['class'] = row_data[0].strip()
                 row['precision'] = float(row_data[1])
                 row['recall'] = float(row_data[2])
                 row['f1_score'] = float(row_data[3])
@@ -211,13 +324,13 @@ def train_model(X_train, y_train, classifier):
     return nb.fit(X_train, y_train)
 
 def predict(test_data,clf):
-        predicted = clf.predict(test_data)
-        return predicted
+    predicted = clf.predict(test_data)
+    return predicted
 
 
 def save_model(classifier, file_name):
     print(file_name)
-    joblib.dump(classifier,file_name)
+    return joblib.dump(classifier, join(app.config['STORE_LOCATION'], file_name))
 
 def load_model(file_name):
    model= joblib.load(file_name)

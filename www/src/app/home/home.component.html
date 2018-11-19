@@ -3,12 +3,11 @@
     Welcome to Spotlight!<br>
     Upload a dataset to get started.
   </p>
-  <p>
-    Current dataset: Movies.csv<br>
-    Current algorithms:
-  </p>
+  <p>Currently saved models:</p>
   <ul>
-      <li>MyDemo1</li>
-      <li>MyDemo2</li>
+      <li *ngFor="let model of models">
+        {{model.name}}
+        <a href="{{model.url}}" >Download</a>
+      </li>
   </ul>
 </div>

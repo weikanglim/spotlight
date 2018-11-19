@@ -12,6 +12,7 @@ nltk = "*"
 sklearn = "*"
 autocorrect = "*"
 flask-cors = "*"
+timeit = "*"
 
 [requires]
 python_version = "3.7"

@@ -1,5 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { UploadEvent, UploadFile, FileSystemFileEntry, FileSystemDirectoryEntry } from 'ngx-file-drop';
+import { ModelFile } from '../modelfile';
+import { ModelService } from '../model.service';
+import { CLASSIFIERS } from '../classifiers';
+import { Classifier } from '../classifier';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-data-add',
@@ -7,15 +12,42 @@ import { UploadEvent, UploadFile, FileSystemFileEntry, FileSystemDirectoryEntry 
   styleUrls: ['./data-add.component.less']
 })
 export class DataAddComponent implements OnInit {
+  classifiers = CLASSIFIERS;
+  selectedClassifier: Classifier;
+  fileToUpload : File;
+  name: string = "";
+  error: string;
 
-  constructor() { }
+  constructor(public modelService: ModelService, public router : Router) {}
 
   ngOnInit() {
   }
 
+  private updateName() : void {
+    if (this.selectedClassifier && this.fileToUpload && this.name == "")
+    {
+      var fileName = this.fileToUpload.name;
+      var extensionIndex = fileName.lastIndexOf(".")
+      console.log("File looks like " + fileName);
+
+      if (extensionIndex > 0)
+      {
+        fileName = fileName.substring(0, extensionIndex)
+        console.log("File looks like " + fileName);
+      }
+
+      this.name = this.selectedClassifier.name + "_" + fileName
+    }
+  }
+
+  public onSelect(classifier: Classifier) : void {
+    this.selectedClassifier = classifier;
+    this.updateName();
+  }
+
   public fileDropped(event: UploadEvent) {
     for (const droppedFile of event.files) {
- 
+
       // Is it a file?
       if (droppedFile.fileEntry.isFile) {
         const fileEntry = droppedFile.fileEntry as FileSystemFileEntry;
@@ -23,7 +55,10 @@ export class DataAddComponent implements OnInit {
  
           // Here you can access the real file
           console.log(droppedFile.relativePath, file);
- 
+
+          this.fileToUpload = file;
+          this.updateName();
+          
           /**
           // You could upload it like this:
           const formData = new FormData()
@@ -47,5 +82,15 @@ export class DataAddComponent implements OnInit {
         console.log(droppedFile.relativePath, fileEntry);
       }
     }
+  }
+
+  public onSubmit() : void {
+    this.error = null;
+    this.modelService.trainClassifier(this.selectedClassifier, this.fileToUpload, this.name).subscribe(data => {
+      this.router.navigateByUrl("/");
+    },
+    err => {
+      this.error = "Unable to complete your request. Please try again."
+    });
   }
 }
