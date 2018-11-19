@@ -1,0 +1,13 @@
+<div class="container">
+  <p>
+    Welcome to Spotlight!<br>
+    Upload a dataset to get started.
+  </p>
+  <p>Currently saved models:</p>
+  <ul>
+      <li *ngFor="let model of models">
+        {{model.name}}
+        <a href="{{model.url}}" >Download</a>
+      </li>
+  </ul>
+</div>

@@ -1,0 +1,41 @@
+<div class="row justify-content-end">
+  <div class="col-sm-4 ">
+    <div class="input-group">
+      <div class="input-group-prepend">
+        <label class="input-group-text" for="activeModel">Active model</label>
+      </div>
+      <select class="custom-select" id="activeModel" name="activeModel" [(ngModel)]="selectedModel" #model="ngModel">
+        <option *ngFor="let model of models" [ngValue]="model">{{model.name}}</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-sm-12">
+    <h4>Classify</h4>
+    <div class="input-group">
+      <input #classifyText type="text" class="form-control" (keyup.enter)="classify(classifyText.value)" (blur)="classify(classifyText.value)"
+        [(ngModel)]="classifyTextValue" placeholder="Enter text here...">
+    </div>
+  </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col-sm-12" *ngIf="predictions.length > 0" >
+    <table class="table table-bordered no-footer dataTable" role="grid">
+      <thead>
+        <tr>
+          <td>Text</td>
+          <td>Prediction</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let prediction of predictions">
+          <td>{{prediction.text}}</td>
+          <td>{{prediction.prediction}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
