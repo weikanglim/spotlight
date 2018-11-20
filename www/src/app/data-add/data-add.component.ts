@@ -4,7 +4,7 @@ import { ModelFile } from '../modelfile';
 import { ModelService } from '../model.service';
 import { CLASSIFIERS } from '../classifiers';
 import { Classifier } from '../classifier';
-import { Router } from '@angular/router';
+import { Router, NavigationExtras } from '@angular/router';
 
 @Component({
   selector: 'app-data-add',
@@ -87,7 +87,12 @@ export class DataAddComponent implements OnInit {
   public onSubmit() : void {
     this.error = null;
     this.modelService.trainClassifier(this.selectedClassifier, this.fileToUpload, this.name).subscribe(data => {
-      this.router.navigateByUrl("/");
+      let navigationExtras : NavigationExtras = {
+        queryParams: {
+          result: JSON.stringify(data)
+      }};
+
+      this.router.navigate(["/train-result"], navigationExtras);
     },
     err => {
       this.error = "Unable to complete your request. Please try again."

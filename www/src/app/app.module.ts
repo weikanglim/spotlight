@@ -10,6 +10,7 @@ import { HomeComponent } from './home/home.component';
 import { DataComponent } from './data/data.component';
 import { DataAddComponent } from './data-add/data-add.component';
 import { FileDropModule } from 'ngx-file-drop';
+import { TrainResultComponent } from './train-result/train-result.component';
 
 
 @NgModule({
@@ -18,7 +19,8 @@ import { FileDropModule } from 'ngx-file-drop';
     ClassifierComponent,
     HomeComponent,
     DataComponent,
-    DataAddComponent
+    DataAddComponent,
+    TrainResultComponent
   ],
   imports: [
     BrowserModule,
