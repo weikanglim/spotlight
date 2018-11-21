@@ -23,6 +23,7 @@ from sklearn.metrics import (accuracy_score, classification_report,
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import BernoulliNB, ComplementNB, MultinomialNB
 from sklearn.pipeline import Pipeline
+from datetime import datetime
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -110,6 +111,58 @@ def train_model():
         mimetype='application/json')
 
     return response
+
+
+@app.route('/trainModel', methods = ['POST'])
+def train_model_new():
+       if request.method == 'POST':
+          if not request.files:
+               return 403
+          input_data = request.files['input_file']
+          dataframe=read_files(input_data)
+          X = dataframe.iloc[:, 1]
+          y = dataframe.iloc[:, 0]
+          classifier = pick_classifier(request.form.get('classifier'))
+          clf = train_model(X, y, classifier)
+          file_model=save_model(clf, str(request.form.get('classifier')) + "_classifier")
+          metadata=[]
+          metadata.append('Runtime:'+ str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+          metadata.append('Classifier:' + str(clf.named_steps['clf']))
+          metadata.append('Labels:' + str(clf.classes_))
+          with open("metadata_train_model.json", "w") as write_file:
+              json.dump(metadata, write_file)
+          return send_file(file_model,attachment_filename="trained_model", as_attachment='true')
+
+@app.route('/testModel', methods = ['POST'])
+def test_model():
+       if request.method == 'POST':
+          if not request.files:
+               return 403
+          input_data = request.files['input_file']
+          dataframe=read_files(input_data)
+          input_model = request.files['model_file']
+          X = dataframe.iloc[:, 1]
+          y = dataframe.iloc[:, 0]
+          clf = load_model(input_model)
+          y_pred = predict(X, clf)
+          list_out = []
+          for data, pred_label,actual_label in zip(X.tolist(),y_pred.tolist(),y.tolist()):
+              right_wrong='None'
+              if(pred_label==actual_label):
+                 right_wrong='Correct'
+              elif(pred_label!=actual_label):
+                 right_wrong = 'Incorrect'
+              list_out.append(data + ' : ' + pred_label + ' : ' + actual_label + ' : ' + right_wrong )
+          metadata = []
+          metadata.append('Runtime:' + str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+          metadata.append('Classifier:' + str(clf.named_steps['clf']))
+          metadata.append('Labels:' + str(clf.classes_))
+          with open("metadata_test_model.json", "w") as write_file:
+              json.dump(metadata, write_file)
+          response = app.response_class(
+                     response=json.dumps(list_out),
+                     mimetype='application/json')
+          return response
 
 @app.route('/models/<model_name>/predict', methods =['POST'])
 def get_model_prediction(model_name):
