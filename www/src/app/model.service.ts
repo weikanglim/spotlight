@@ -7,6 +7,7 @@ import { catchError } from 'rxjs/operators';
 import { Classifier } from './classifier';
 import { Model } from './model';
 import { ClassifierResult } from './classifier-result';
+import { TrainingResult } from './train-result';
 
 
 @Injectable({
@@ -32,18 +33,14 @@ export class ModelService {
       'Something bad happened; please try again later.');
   };
 
-  trainClassifier(classifier : Classifier, dataFile: File, modelName: string) : Observable<{}> {
-    // const headers = new HttpHeaders({
-    //   'Content-Type': undefined
-    // });
-
+  trainClassifier(classifier : Classifier, dataFile: File, modelName: string) : Observable<TrainingResult> {
     var formData = new FormData();
     formData.append("datafile", dataFile);
     formData.append("classifier", classifier.id);
     formData.append("modelname", modelName);
     
     console.log(`${serverUrl}/models/train`);
-    return this.http.post(`${serverUrl}/models/train`, formData)
+    return this.http.post<TrainingResult>(`${serverUrl}/models/train`, formData)
       .pipe(catchError(this.handleError));
   }
 

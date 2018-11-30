@@ -103,7 +103,8 @@ def train_model():
     print(end-start)
 
     accuracy = accuracy_score(y_pred, y_test)
-    data = {'accuracy': accuracy,
+    data = {'modelName': model_name,
+            'accuracy': accuracy,
             'classificationMatrix': classification_report_data(classification_report(y_test, y_pred)),
             'modelUri': "http://" + request.host + "/models/" + model_name }
     response = app.response_class(
