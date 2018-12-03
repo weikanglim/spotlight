@@ -8,9 +8,11 @@ import { AppComponent } from './app.component';
 import { ClassifierComponent } from './classifier/classifier.component';
 import { HomeComponent } from './home/home.component';
 import { DataComponent } from './data/data.component';
-import { DataAddComponent } from './data-add/data-add.component';
+import { TrainComponent } from './train/train.component';
 import { FileDropModule } from 'ngx-file-drop';
-import { TrainResultComponent } from './train-result/train-result.component';
+import { TestComponent } from './test/test.component';
+import { AgGridModule } from 'ag-grid-angular';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 
 @NgModule({
@@ -19,15 +21,17 @@ import { TrainResultComponent } from './train-result/train-result.component';
     ClassifierComponent,
     HomeComponent,
     DataComponent,
-    DataAddComponent,
-    TrainResultComponent
+    TrainComponent,
+    TestComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     FileDropModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    AgGridModule.withComponents([]),
+    NgbModule
   ],
   providers: [],
   bootstrap: [AppComponent]

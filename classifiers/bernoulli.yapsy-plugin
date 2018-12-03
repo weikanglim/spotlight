@@ -1,0 +1,8 @@
+[Core]
+Name = Bernoulli classifier
+Module = bernoulli
+
+[Documentation]
+Author = Wei Lim
+Version = 0.1
+Description = Bernoulli classifier

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ModelService } from '../model.service';
 import { Model } from '../model';
+import {Router, ActivatedRoute, Params} from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -9,8 +10,9 @@ import { Model } from '../model';
 })
 export class HomeComponent implements OnInit {
   models: Model[];
+  info: string;
 
-  constructor(private modelService : ModelService) { }
+  constructor(private modelService : ModelService, private activatedRoute : ActivatedRoute) { }
 
   ngOnInit() {
     this.getModels();
@@ -19,6 +21,13 @@ export class HomeComponent implements OnInit {
   getModels(): void {
     this.modelService.getModels()
       .subscribe(models => this.models = models);
+
+    this.activatedRoute.queryParams.subscribe(params => {
+      if (params['savedModel'])
+      {
+        this.info = "Saved model " + params['savedModel'] + " successfully."
+      }
+    });
   }
 
 }

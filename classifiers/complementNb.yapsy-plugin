@@ -1,0 +1,8 @@
+[Core]
+Name = Complement Naive-Bayes classifier
+Module = ComplementNB
+
+[Documentation]
+Author = Wei Lim
+Version = 0.1
+Description = Complement Naive-Bayes classifier

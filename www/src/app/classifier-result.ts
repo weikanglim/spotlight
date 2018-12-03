@@ -1,4 +1,10 @@
+import { ClassLabelResult } from "./class-label-result";
+import { Classification } from "./classification";
+
 export class ClassifierResult {
-    text: string;
-    prediction: string;
+    modelName: string;
+    accuracy: number;
+    classificationMatrix: ClassLabelResult[];
+    classifications: Classification[];
+    modelUri: string;
 }

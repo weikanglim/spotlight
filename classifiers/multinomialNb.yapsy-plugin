@@ -1,0 +1,8 @@
+[Core]
+Name = Multinomial Naive-Bayes classifier
+Module = multinomialNb
+
+[Documentation]
+Author = Wei Lim
+Version = 0.1
+Description = Multinomial Naive-Bayes classifier

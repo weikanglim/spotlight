@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ModelService } from '../model.service';
 import { Model } from '../model';
-import { ClassifierResult } from '../classifier-result';
+import { Classification } from '../classification';
 
 @Component({
   selector: 'app-classifier',
@@ -12,7 +12,7 @@ export class ClassifierComponent implements OnInit {
   models: Model[];
   selectedModel: Model;
   classifyTextValue: string;
-  predictions : ClassifierResult[] = [];
+  predictions : Classification[] = [];
 
   constructor(private modelService : ModelService) { }
 
@@ -36,9 +36,10 @@ export class ClassifierComponent implements OnInit {
     {
       console.log("selected model: " + this.selectedModel.name + "(" + this.selectedModel.url + ")");
 
-      this.modelService.classify(text, this.selectedModel)
+      this.modelService.predictOne(text, this.selectedModel)
         .subscribe(data => {
-          this.predictions.unshift(data[0]);
+          console.log(data)
+          this.predictions.unshift(data);
           this.classifyTextValue = '';
         });
     }
