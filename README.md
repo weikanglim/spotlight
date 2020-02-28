@@ -1,10 +1,11 @@
 # Spotlight (CS410)
-Spotlight is a web app that helps data scientists and researchers present their text classifiers as a web application without any web development required.
+Spotlight is a web app that allows researchers present their text classifiers in a web application without any web development required.
 Researchers implement their text classifiers in Python, and load it into the web app via a plugin model.
 
 Spotlight supports:
 - Uploading test datasets to be re-used
-- Training / testing uploaded text classifier models
+- Creating new text classifier models via training and downloading them for further use
+- Testing text classifier models
 - Interactive demo mode for users to input new test cases
 
 # How-to-use
